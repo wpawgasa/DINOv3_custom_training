@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dinov3-model-pv
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: storage
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: fast-ssd
+  
+  # NFS storage (adjust based on your storage solution)
+  nfs:
+    server: nfs.example.com
+    path: /data/dinov3/models
+  
+  # Alternative: HostPath (for single-node clusters)
+  # hostPath:
+  #   path: /data/dinov3/models
+  #   type: DirectoryOrCreate
+
+  # Alternative: Cloud storage (AWS EFS example)
+  # csi:
+  #   driver: efs.csi.aws.com
+  #   volumeHandle: fs-12345678
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dinov3-model-pvc
+  namespace: dinov3
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: storage
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: fast-ssd
+  volumeName: dinov3-model-pv
+
+---
+# Shared cache volume for multiple pods
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: dinov3-cache-pv
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: cache
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: standard
+  
+  # NFS for shared cache
+  nfs:
+    server: nfs.example.com
+    path: /data/dinov3/cache
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dinov3-cache-pvc
+  namespace: dinov3
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: cache
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard

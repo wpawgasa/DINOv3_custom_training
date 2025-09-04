@@ -1,0 +1,146 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dinov3-api-ingress
+  namespace: dinov3
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: ingress
+  annotations:
+    # Nginx ingress annotations
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    
+    # SSL and security
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    
+    # Request size limits
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/client-max-body-size: "100m"
+    
+    # Timeout configurations
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    
+    # CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+    nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Frame-Options DENY;
+      add_header X-Content-Type-Options nosniff;
+      add_header X-XSS-Protection "1; mode=block";
+      add_header Referrer-Policy "strict-origin-when-cross-origin";
+spec:
+  tls:
+  - hosts:
+    - api.dinov3.example.com
+    secretName: dinov3-api-tls
+  
+  rules:
+  - host: api.dinov3.example.com
+    http:
+      paths:
+      # Health check (no auth required)
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80
+      
+      # API documentation
+      - path: /docs
+        pathType: Exact
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80
+      
+      - path: /redoc
+        pathType: Exact
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80
+      
+      - path: /openapi.json
+        pathType: Exact
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80
+      
+      # Main API endpoints
+      - path: /predict
+        pathType: Prefix
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80
+      
+      - path: /model
+        pathType: Prefix
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80
+      
+      - path: /load
+        pathType: Exact
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80
+      
+      # Default catch-all
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80
+
+---
+# Internal ingress for metrics (restricted access)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dinov3-metrics-ingress
+  namespace: dinov3
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: monitoring
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+spec:
+  rules:
+  - host: metrics.dinov3.internal
+    http:
+      paths:
+      - path: /metrics
+        pathType: Exact
+        backend:
+          service:
+            name: dinov3-api-service
+            port:
+              number: 80

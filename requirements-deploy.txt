@@ -1,0 +1,43 @@
+# Production deployment requirements for DINOv3 API
+
+# Web framework and ASGI server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+gunicorn>=21.2.0
+
+# API utilities
+python-multipart>=0.0.6
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Monitoring and observability
+prometheus-client>=0.18.0
+prometheus-fastapi-instrumentator>=6.1.0
+
+# HTTP client for health checks and external requests
+httpx>=0.25.0
+requests>=2.31.0
+
+# Image processing for API
+Pillow>=10.0.0
+
+# Data validation and serialization
+pydantic>=2.4.0
+
+# Logging and configuration
+python-json-logger>=2.0.7
+structlog>=23.1.0
+
+# Production utilities
+click>=8.1.0
+typer>=0.9.0
+
+# Security
+cryptography>=41.0.0
+
+# Optional: ONNX runtime for optimized inference
+onnxruntime-gpu>=1.16.0; sys_platform != "darwin"
+onnxruntime>=1.16.0; sys_platform == "darwin"
+
+# Optional: TensorRT for NVIDIA optimization
+# tensorrt>=8.6.0; platform_machine == "x86_64"

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dinov3
+  labels:
+    name: dinov3
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: namespace

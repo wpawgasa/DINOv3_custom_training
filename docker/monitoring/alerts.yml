@@ -1,0 +1,244 @@
+# Prometheus alerting rules for DINOv3
+
+groups:
+- name: dinov3.api
+  rules:
+  
+  # High error rate
+  - alert: HighErrorRate
+    expr: |
+      (
+        rate(dinov3_requests_total{status=~"5.."}[5m]) /
+        rate(dinov3_requests_total[5m])
+      ) * 100 > 5
+    for: 2m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "High error rate detected"
+      description: "DINOv3 API error rate is {{ $value }}% over the last 5 minutes"
+
+  # Very high error rate
+  - alert: VeryHighErrorRate
+    expr: |
+      (
+        rate(dinov3_requests_total{status=~"5.."}[5m]) /
+        rate(dinov3_requests_total[5m])
+      ) * 100 > 20
+    for: 1m
+    labels:
+      severity: critical
+      service: dinov3-api
+    annotations:
+      summary: "Very high error rate detected"
+      description: "DINOv3 API error rate is {{ $value }}% over the last 5 minutes"
+
+  # High response time
+  - alert: HighResponseTime
+    expr: |
+      histogram_quantile(0.95, rate(dinov3_request_duration_seconds_bucket[5m])) > 30
+    for: 5m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "High response time detected"
+      description: "95th percentile response time is {{ $value }}s"
+
+  # API unavailable
+  - alert: APIUnavailable
+    expr: up{job="dinov3-api"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: dinov3-api
+    annotations:
+      summary: "DINOv3 API is unavailable"
+      description: "DINOv3 API instance {{ $labels.instance }} is down"
+
+  # High CPU usage
+  - alert: HighCPUUsage
+    expr: |
+      (
+        rate(container_cpu_usage_seconds_total{namespace="dinov3",container="dinov3-api"}[5m]) * 100
+      ) > 80
+    for: 10m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "High CPU usage detected"
+      description: "CPU usage is {{ $value }}% for container {{ $labels.container }}"
+
+  # High memory usage
+  - alert: HighMemoryUsage
+    expr: |
+      (
+        container_memory_usage_bytes{namespace="dinov3",container="dinov3-api"} /
+        container_spec_memory_limit_bytes{namespace="dinov3",container="dinov3-api"} * 100
+      ) > 85
+    for: 5m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "High memory usage detected"
+      description: "Memory usage is {{ $value }}% for container {{ $labels.container }}"
+
+  # GPU memory usage
+  - alert: HighGPUMemoryUsage
+    expr: |
+      (
+        nvidia_gpu_memory_used_bytes /
+        nvidia_gpu_memory_total_bytes * 100
+      ) > 90
+    for: 5m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "High GPU memory usage detected"
+      description: "GPU memory usage is {{ $value }}% on GPU {{ $labels.gpu }}"
+
+  # Model inference queue building up
+  - alert: HighInferenceQueueLength
+    expr: dinov3_active_requests > 50
+    for: 2m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "High inference queue length"
+      description: "Active requests queue length is {{ $value }}"
+
+  # Low throughput
+  - alert: LowThroughput
+    expr: rate(dinov3_requests_total[5m]) < 1
+    for: 10m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "Low API throughput"
+      description: "Request rate is only {{ $value }} requests per second"
+
+- name: dinov3.infrastructure
+  rules:
+  
+  # Pod restart frequency
+  - alert: FrequentPodRestarts
+    expr: |
+      rate(kube_pod_container_status_restarts_total{namespace="dinov3"}[1h]) * 3600 > 5
+    for: 5m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "Frequent pod restarts detected"
+      description: "Pod {{ $labels.pod }} is restarting {{ $value }} times per hour"
+
+  # Persistent volume usage
+  - alert: HighPVUsage
+    expr: |
+      (
+        kubelet_volume_stats_used_bytes{namespace="dinov3"} /
+        kubelet_volume_stats_capacity_bytes{namespace="dinov3"} * 100
+      ) > 85
+    for: 5m
+    labels:
+      severity: warning
+      service: dinov3-storage
+    annotations:
+      summary: "High persistent volume usage"
+      description: "PV usage is {{ $value }}% for volume {{ $labels.persistentvolumeclaim }}"
+
+  # Node resource pressure
+  - alert: NodeMemoryPressure
+    expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+    for: 2m
+    labels:
+      severity: critical
+      service: infrastructure
+    annotations:
+      summary: "Node under memory pressure"
+      description: "Node {{ $labels.node }} is under memory pressure"
+
+  - alert: NodeDiskPressure
+    expr: kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+    for: 2m
+    labels:
+      severity: critical
+      service: infrastructure
+    annotations:
+      summary: "Node under disk pressure"
+      description: "Node {{ $labels.node }} is under disk pressure"
+
+- name: dinov3.model
+  rules:
+  
+  # Model loading failures
+  - alert: ModelLoadingFailures
+    expr: |
+      increase(dinov3_model_load_failures_total[10m]) > 0
+    for: 1m
+    labels:
+      severity: critical
+      service: dinov3-api
+    annotations:
+      summary: "Model loading failures detected"
+      description: "{{ $value }} model loading failures in the last 10 minutes"
+
+  # Long model inference time
+  - alert: SlowModelInference
+    expr: |
+      histogram_quantile(0.95, rate(dinov3_inference_duration_seconds_bucket[5m])) > 10
+    for: 5m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "Slow model inference detected"
+      description: "95th percentile inference time is {{ $value }}s"
+
+  # Large batch sizes causing issues
+  - alert: LargeBatchSizes
+    expr: |
+      histogram_quantile(0.95, rate(dinov3_batch_size_bucket[5m])) > 64
+    for: 5m
+    labels:
+      severity: warning
+      service: dinov3-api
+    annotations:
+      summary: "Large batch sizes detected"
+      description: "95th percentile batch size is {{ $value }}"
+
+- name: dinov3.business
+  rules:
+  
+  # Low prediction confidence
+  - alert: LowPredictionConfidence
+    expr: |
+      histogram_quantile(0.50, rate(dinov3_prediction_confidence_bucket[10m])) < 0.7
+    for: 10m
+    labels:
+      severity: warning
+      service: dinov3-model
+    annotations:
+      summary: "Low prediction confidence detected"
+      description: "Median prediction confidence is {{ $value }}"
+
+  # Unusual request patterns
+  - alert: UnusualRequestPattern
+    expr: |
+      abs(
+        rate(dinov3_requests_total[10m]) -
+        rate(dinov3_requests_total[1h] offset 1h)
+      ) > 0.5 * rate(dinov3_requests_total[1h] offset 1h)
+    for: 5m
+    labels:
+      severity: info
+      service: dinov3-api
+    annotations:
+      summary: "Unusual request pattern detected"
+      description: "Request pattern has changed significantly compared to the same time yesterday"

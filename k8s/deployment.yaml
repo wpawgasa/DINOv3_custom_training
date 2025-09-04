@@ -1,0 +1,181 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dinov3-api
+  namespace: dinov3
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: api
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dinov3
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: dinov3
+        app.kubernetes.io/component: api
+        app.kubernetes.io/version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8000"
+    spec:
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      
+      # Service account
+      serviceAccountName: dinov3-api
+      
+      # Node selector for GPU nodes
+      nodeSelector:
+        accelerator: nvidia-tesla-k80  # Adjust based on your GPU nodes
+      
+      # Tolerations for GPU nodes
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      
+      containers:
+      - name: dinov3-api
+        image: dinov3-api:latest
+        imagePullPolicy: Always
+        
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        
+        # Environment variables from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: dinov3-config
+        
+        # Environment variables from Secrets
+        env:
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: dinov3-secrets
+              key: API_KEY
+        
+        # Resource requests and limits
+        resources:
+          requests:
+            cpu: "1"
+            memory: "4Gi"
+            nvidia.com/gpu: 1
+          limits:
+            cpu: "4"
+            memory: "16Gi"
+            nvidia.com/gpu: 1
+        
+        # Volume mounts
+        volumeMounts:
+        - name: model-storage
+          mountPath: /home/dinov3/models
+          readOnly: true
+        - name: config-storage
+          mountPath: /home/dinov3/configs
+          readOnly: true
+        - name: temp-storage
+          mountPath: /home/dinov3/temp
+        - name: logs-storage
+          mountPath: /home/dinov3/logs
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+          successThreshold: 1
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        
+        # Startup probe for slow model loading
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30  # Allow up to 5 minutes for startup
+          successThreshold: 1
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      
+      # Init container to warm up model
+      initContainers:
+      - name: model-warmup
+        image: dinov3-api:latest
+        command: ["python3", "-c", "print('Model warmup complete')"]
+        volumeMounts:
+        - name: model-storage
+          mountPath: /home/dinov3/models
+          readOnly: true
+        resources:
+          requests:
+            cpu: "0.5"
+            memory: "2Gi"
+          limits:
+            cpu: "2"
+            memory: "8Gi"
+      
+      # Volumes
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: dinov3-model-pvc
+      - name: config-storage
+        configMap:
+          name: dinov3-model-config
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: "10Gi"
+      - name: logs-storage
+        emptyDir:
+          sizeLimit: "5Gi"
+      
+      # Restart policy
+      restartPolicy: Always
+      
+      # DNS policy
+      dnsPolicy: ClusterFirst
+      
+      # Termination grace period
+      terminationGracePeriodSeconds: 60

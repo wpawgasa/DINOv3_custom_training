@@ -1,0 +1,140 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dinov3-api
+  namespace: dinov3
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: serviceaccount
+automountServiceAccountToken: false
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: dinov3
+  name: dinov3-api-role
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: rbac
+rules:
+# Allow reading pods for health checks and service discovery
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+
+# Allow reading services for service discovery
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list"]
+
+# Allow reading configmaps
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+
+# Allow reading secrets (for model loading credentials)
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+
+# Allow updating own pod status
+- apiGroups: [""]
+  resources: ["pods/status"]
+  verbs: ["patch", "update"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dinov3-api-rolebinding
+  namespace: dinov3
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: rbac
+subjects:
+- kind: ServiceAccount
+  name: dinov3-api
+  namespace: dinov3
+roleRef:
+  kind: Role
+  name: dinov3-api-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Network policy for security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dinov3-api-netpol
+  namespace: dinov3
+  labels:
+    app.kubernetes.io/name: dinov3
+    app.kubernetes.io/component: network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: dinov3
+      app.kubernetes.io/component: api
+  
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  ingress:
+  # Allow ingress from nginx ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  
+  # Allow ingress from monitoring namespace
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    ports:
+    - protocol: TCP
+      port: 8000
+  
+  # Allow ingress from same namespace (pod-to-pod)
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: dinov3
+    ports:
+    - protocol: TCP
+      port: 8000
+  
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  
+  # Allow HTTPS outbound (for model downloads, external APIs)
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+  
+  # Allow HTTP outbound
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 80
+  
+  # Allow Kubernetes API access
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 6443

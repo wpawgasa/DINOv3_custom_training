@@ -1,0 +1,477 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "DINOv3 API Overview",
+    "description": "Main dashboard for DINOv3 API monitoring",
+    "tags": ["dinov3", "api", "overview"],
+    "style": "dark",
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "version": 1,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(dinov3_requests_total[5m])",
+            "legendFormat": "Requests/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "green",
+                  "value": 5
+                }
+              ]
+            },
+            "unit": "reqps"
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"],
+            "fields": ""
+          },
+          "orientation": "horizontal",
+          "textMode": "auto",
+          "colorMode": "background"
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Error Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate(dinov3_requests_total{status=~\"5..\"}[5m]) / rate(dinov3_requests_total[5m]) * 100",
+            "legendFormat": "Error %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            },
+            "unit": "percent"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Response Time (95th percentile)",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(dinov3_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            },
+            "unit": "s"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 4,
+        "title": "Active Requests",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "dinov3_active_requests",
+            "legendFormat": "Active"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 10
+                },
+                {
+                  "color": "red",
+                  "value": 50
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 0
+        }
+      },
+      {
+        "id": 5,
+        "title": "Request Rate Over Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(dinov3_requests_total[5m])",
+            "legendFormat": "Total Requests/sec"
+          },
+          {
+            "expr": "rate(dinov3_requests_total{endpoint=\"/predict\"}[5m])",
+            "legendFormat": "Single Predict/sec"
+          },
+          {
+            "expr": "rate(dinov3_requests_total{endpoint=\"/predict/batch\"}[5m])",
+            "legendFormat": "Batch Predict/sec"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 4
+        }
+      },
+      {
+        "id": 6,
+        "title": "Response Time Distribution",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(dinov3_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(dinov3_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(dinov3_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "99th percentile"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Seconds",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 4
+        }
+      },
+      {
+        "id": 7,
+        "title": "Model Inference Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(dinov3_inference_duration_seconds_bucket[5m]))",
+            "legendFormat": "Median Inference Time"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(dinov3_inference_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th Percentile"
+          },
+          {
+            "expr": "rate(dinov3_inference_duration_seconds_sum[5m]) / rate(dinov3_inference_duration_seconds_count[5m])",
+            "legendFormat": "Average Inference Time"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Seconds",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 12
+        }
+      },
+      {
+        "id": 8,
+        "title": "Batch Size Distribution",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(dinov3_batch_size_bucket[5m]))",
+            "legendFormat": "Median Batch Size"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(dinov3_batch_size_bucket[5m]))",
+            "legendFormat": "95th Percentile"
+          },
+          {
+            "expr": "rate(dinov3_batch_size_sum[5m]) / rate(dinov3_batch_size_count[5m])",
+            "legendFormat": "Average Batch Size"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Batch Size",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 12
+        }
+      },
+      {
+        "id": 9,
+        "title": "CPU Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total{namespace=\"dinov3\",container=\"dinov3-api\"}[5m]) * 100",
+            "legendFormat": "CPU Usage %"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Percent",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 20
+        }
+      },
+      {
+        "id": 10,
+        "title": "Memory Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes{namespace=\"dinov3\",container=\"dinov3-api\"} / 1024 / 1024",
+            "legendFormat": "Memory Usage (MB)"
+          },
+          {
+            "expr": "container_spec_memory_limit_bytes{namespace=\"dinov3\",container=\"dinov3-api\"} / 1024 / 1024",
+            "legendFormat": "Memory Limit (MB)"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Megabytes",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 20
+        }
+      },
+      {
+        "id": 11,
+        "title": "GPU Utilization",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "nvidia_gpu_utilization_gpu",
+            "legendFormat": "GPU {{ $labels.gpu }} Utilization"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Percent",
+            "min": 0,
+            "max": 100
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 28
+        }
+      },
+      {
+        "id": 12,
+        "title": "GPU Memory",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "nvidia_gpu_memory_used_bytes / 1024 / 1024",
+            "legendFormat": "GPU {{ $labels.gpu }} Memory Used (MB)"
+          },
+          {
+            "expr": "nvidia_gpu_memory_total_bytes / 1024 / 1024",
+            "legendFormat": "GPU {{ $labels.gpu }} Memory Total (MB)"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Megabytes",
+            "min": 0
+          },
+          {
+            "show": false
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 28
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "namespace",
+          "type": "query",
+          "query": "label_values(kubernetes_namespace)",
+          "current": {
+            "value": "dinov3",
+            "text": "dinov3"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "multi": false,
+          "options": [],
+          "refresh": 1,
+          "regex": "",
+          "sort": 0
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "kube_deployment_status_replicas_updated{namespace=\"$namespace\"}",
+          "iconColor": "blue",
+          "titleFormat": "Deployment Updated"
+        }
+      ]
+    }
+  }
+}
