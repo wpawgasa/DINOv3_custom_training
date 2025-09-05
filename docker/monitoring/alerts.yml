@@ -3,7 +3,7 @@
 groups:
 - name: dinov3.api
   rules:
-  
+
   # High error rate
   - alert: HighErrorRate
     expr: |
@@ -125,7 +125,7 @@ groups:
 
 - name: dinov3.infrastructure
   rules:
-  
+
   # Pod restart frequency
   - alert: FrequentPodRestarts
     expr: |
@@ -176,7 +176,7 @@ groups:
 
 - name: dinov3.model
   rules:
-  
+
   # Model loading failures
   - alert: ModelLoadingFailures
     expr: |
@@ -215,7 +215,7 @@ groups:
 
 - name: dinov3.business
   rules:
-  
+
   # Low prediction confidence
   - alert: LowPredictionConfidence
     expr: |

@@ -15,17 +15,17 @@ data:
   MAX_REQUESTS_JITTER: "100"
   TIMEOUT: "120"
   KEEP_ALIVE: "5"
-  
+
   # Model configuration
   MODEL_CACHE_TTL: "3600"
   BATCH_TIMEOUT: "30"
   MAX_BATCH_SIZE: "32"
-  
+
   # API configuration
   CORS_ORIGINS: "*"
   API_TITLE: "DINOv3 Classification API"
   API_VERSION: "1.0.0"
-  
+
   # Monitoring
   METRICS_ENABLED: "true"
   HEALTH_CHECK_INTERVAL: "30"

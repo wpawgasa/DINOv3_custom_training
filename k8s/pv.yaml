@@ -12,12 +12,12 @@ spec:
     - ReadOnlyMany
   persistentVolumeReclaimPolicy: Retain
   storageClassName: fast-ssd
-  
+
   # NFS storage (adjust based on your storage solution)
   nfs:
     server: nfs.example.com
     path: /data/dinov3/models
-  
+
   # Alternative: HostPath (for single-node clusters)
   # hostPath:
   #   path: /data/dinov3/models
@@ -62,7 +62,7 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Delete
   storageClassName: standard
-  
+
   # NFS for shared cache
   nfs:
     server: nfs.example.com

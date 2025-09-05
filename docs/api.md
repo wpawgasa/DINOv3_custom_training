@@ -337,28 +337,28 @@ class DINOv3Client:
     def __init__(self, base_url="http://localhost:8000"):
         self.base_url = base_url
         self.session = requests.Session()
-    
+
     def health_check(self):
         response = self.session.get(f"{self.base_url}/health")
         response.raise_for_status()
         return response.json()
-    
+
     def load_model(self, model_path, config_path=None, device="auto"):
         data = {"model_path": model_path, "device": device}
         if config_path:
             data["config_path"] = config_path
-        
+
         response = self.session.post(f"{self.base_url}/load", data=data)
         response.raise_for_status()
         return response.json()
-    
+
     def predict(self, image_path, confidence_threshold=0.0, return_features=False):
         files = {"file": open(image_path, "rb")}
         data = {
             "confidence_threshold": confidence_threshold,
             "return_features": return_features
         }
-        
+
         response = self.session.post(
             f"{self.base_url}/predict",
             files=files,
@@ -366,14 +366,14 @@ class DINOv3Client:
         )
         response.raise_for_status()
         return response.json()
-    
+
     def predict_batch(self, image_paths, batch_size=32, confidence_threshold=0.0):
         files = [("files", open(path, "rb")) for path in image_paths]
         data = {
             "batch_size": batch_size,
             "confidence_threshold": confidence_threshold
         }
-        
+
         try:
             response = self.session.post(
                 f"{self.base_url}/predict/batch",
@@ -537,18 +537,18 @@ When deploying in production:
 server {
     listen 443 ssl;
     server_name api.yourdomain.com;
-    
+
     ssl_certificate /path/to/cert.pem;
     ssl_certificate_key /path/to/key.pem;
-    
+
     location / {
         proxy_pass http://dinov3-api:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        
+
         # Rate limiting
         limit_req zone=api burst=10 nodelay;
-        
+
         # File size limit
         client_max_body_size 100M;
     }

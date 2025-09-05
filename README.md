@@ -230,7 +230,7 @@ seed: 42
 
 model:
   variant: "dinov3_vitb16"
-  task_type: "classification" 
+  task_type: "classification"
   num_classes: 10
   pretrained: true
   dropout: 0.1

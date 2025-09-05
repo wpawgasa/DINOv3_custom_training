@@ -209,7 +209,7 @@ python scripts/train.py \
 # configs/low_memory.yaml
 data:
   batch_size: 8          # Reduce from default 32
-  
+
 training:
   mixed_precision: true  # Enable to save memory
   gradient_accumulation_steps: 4  # Simulate larger batch
@@ -225,7 +225,7 @@ model:
 training:
   epochs: 20             # Reduce epochs
   mixed_precision: true  # Faster training
-  
+
 data:
   batch_size: 64         # Larger batches (if memory allows)
   num_workers: 8         # More data loading workers
@@ -243,7 +243,7 @@ training:
   mode: "full_fine_tune"    # Fine-tune everything
   epochs: 100
   learning_rate: 2e-5       # Lower learning rate
-  
+
 data:
   image_size: [384, 384]    # Higher resolution
 ```

@@ -1,6 +1,7 @@
-from typing import Dict, List, Optional, Union, Literal, Any
-from pydantic import BaseModel, Field, validator, root_validator
 from enum import Enum
+from typing import Any, Dict, List, Literal, Optional, Union
+
+from pydantic import BaseModel, Field, root_validator, validator
 
 
 class TaskType(str, Enum):
@@ -49,7 +50,7 @@ class ModelConfig(BaseModel):
     pretrained: bool = True
     dropout_rate: float = Field(0.1, ge=0.0, le=1.0)
     use_head_norm: bool = True
-    
+
     class Config:
         use_enum_values = True
 
@@ -65,8 +66,8 @@ class DataConfig(BaseModel):
     image_size: int = Field(224, gt=0)
     mean: List[float] = Field([0.485, 0.456, 0.406])
     std: List[float] = Field([0.229, 0.224, 0.225])
-    
-    @validator('mean', 'std')
+
+    @validator("mean", "std")
     def validate_normalization_stats(cls, v):
         if len(v) != 3:
             raise ValueError("Mean and std must have exactly 3 values for RGB channels")
@@ -93,20 +94,22 @@ class OptimizerConfig(BaseModel):
     weight_decay: float = Field(0.01, ge=0.0)
     momentum: float = Field(0.9, ge=0.0, le=1.0)
     eps: float = Field(1e-8, gt=0.0)
-    
+
     class Config:
         use_enum_values = True
-    
+
     @root_validator
     def validate_differential_lr(cls, values):
-        training_mode = values.get('training_mode')
-        backbone_lr = values.get('backbone_lr')
-        head_lr = values.get('head_lr')
-        
+        training_mode = values.get("training_mode")
+        backbone_lr = values.get("backbone_lr")
+        head_lr = values.get("head_lr")
+
         if training_mode == TrainingMode.FULL_FINE_TUNE:
             if backbone_lr is None or head_lr is None:
-                raise ValueError("backbone_lr and head_lr must be specified for full fine-tuning")
-        
+                raise ValueError(
+                    "backbone_lr and head_lr must be specified for full fine-tuning"
+                )
+
         return values
 
 
@@ -117,7 +120,7 @@ class SchedulerConfig(BaseModel):
     warmup_steps: Optional[int] = Field(None, ge=0)
     max_steps: Optional[int] = Field(None, gt=0)
     min_lr: float = Field(1e-6, ge=0.0)
-    
+
     class Config:
         use_enum_values = True
 
@@ -132,10 +135,10 @@ class TrainingConfig(BaseModel):
     gradient_accumulation_steps: int = Field(1, gt=0)
     max_grad_norm: Optional[float] = Field(None, gt=0.0)
     resume_from_checkpoint: Optional[str] = None
-    
+
     optimizer: OptimizerConfig
     scheduler: Optional[SchedulerConfig] = None
-    
+
     class Config:
         use_enum_values = True
 
@@ -157,13 +160,22 @@ class EvaluationConfig(BaseModel):
     compute_confusion_matrix: bool = True
     save_predictions: bool = False
     batch_size: int = Field(32, gt=0)
-    
-    @validator('metrics')
+
+    @validator("metrics")
     def validate_metrics(cls, v):
-        valid_metrics = ["accuracy", "precision", "recall", "f1", "auc", "top5_accuracy"]
+        valid_metrics = [
+            "accuracy",
+            "precision",
+            "recall",
+            "f1",
+            "auc",
+            "top5_accuracy",
+        ]
         for metric in v:
             if metric not in valid_metrics:
-                raise ValueError(f"Invalid metric: {metric}. Valid options: {valid_metrics}")
+                raise ValueError(
+                    f"Invalid metric: {metric}. Valid options: {valid_metrics}"
+                )
         return v
 
 
@@ -181,7 +193,7 @@ class ExperimentConfig(BaseModel):
     tags: List[str] = Field(default_factory=list)
     seed: int = Field(42, ge=0)
     output_dir: str = "./outputs"
-    
+
     model: ModelConfig
     data: DataConfig
     augmentation: AugmentationConfig
@@ -189,17 +201,25 @@ class ExperimentConfig(BaseModel):
     logging: LoggingConfig
     evaluation: EvaluationConfig
     deployment: Optional[DeploymentConfig] = None
-    
+
     @root_validator
     def validate_experiment_consistency(cls, values):
-        model_config = values.get('model')
-        training_config = values.get('training')
-        
+        model_config = values.get("model")
+        training_config = values.get("training")
+
         if model_config and training_config:
-            if model_config.freeze_backbone and training_config.mode != TrainingMode.LINEAR_PROBE:
-                raise ValueError("freeze_backbone=True is only compatible with linear_probe mode")
-            
-            if training_config.mode == TrainingMode.LINEAR_PROBE and not model_config.freeze_backbone:
+            if (
+                model_config.freeze_backbone
+                and training_config.mode != TrainingMode.LINEAR_PROBE
+            ):
+                raise ValueError(
+                    "freeze_backbone=True is only compatible with linear_probe mode"
+                )
+
+            if (
+                training_config.mode == TrainingMode.LINEAR_PROBE
+                and not model_config.freeze_backbone
+            ):
                 raise ValueError("linear_probe mode requires freeze_backbone=True")
-        
+
         return values

@@ -140,6 +140,9 @@ data/
 datasets/
 processed_data/
 
+# Exception: Keep src/data tracked (framework code)
+!src/data/
+
 # Model checkpoints and weights
 *.pth
 *.pt

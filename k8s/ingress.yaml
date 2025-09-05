@@ -10,31 +10,31 @@ metadata:
     # Nginx ingress annotations
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/rewrite-target: /
-    
+
     # SSL and security
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    
+
     # Rate limiting
     nginx.ingress.kubernetes.io/rate-limit: "100"
     nginx.ingress.kubernetes.io/rate-limit-window: "1m"
-    
+
     # Request size limits
     nginx.ingress.kubernetes.io/proxy-body-size: "100m"
     nginx.ingress.kubernetes.io/client-max-body-size: "100m"
-    
+
     # Timeout configurations
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    
+
     # CORS
     nginx.ingress.kubernetes.io/enable-cors: "true"
     nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
     nginx.ingress.kubernetes.io/cors-expose-headers: "Content-Length,Content-Range"
-    
+
     # Security headers
     nginx.ingress.kubernetes.io/configuration-snippet: |
       add_header X-Frame-Options DENY;
@@ -46,7 +46,7 @@ spec:
   - hosts:
     - api.dinov3.example.com
     secretName: dinov3-api-tls
-  
+
   rules:
   - host: api.dinov3.example.com
     http:
@@ -59,7 +59,7 @@ spec:
             name: dinov3-api-service
             port:
               number: 80
-      
+
       # API documentation
       - path: /docs
         pathType: Exact
@@ -68,7 +68,7 @@ spec:
             name: dinov3-api-service
             port:
               number: 80
-      
+
       - path: /redoc
         pathType: Exact
         backend:
@@ -76,7 +76,7 @@ spec:
             name: dinov3-api-service
             port:
               number: 80
-      
+
       - path: /openapi.json
         pathType: Exact
         backend:
@@ -84,7 +84,7 @@ spec:
             name: dinov3-api-service
             port:
               number: 80
-      
+
       # Main API endpoints
       - path: /predict
         pathType: Prefix
@@ -93,7 +93,7 @@ spec:
             name: dinov3-api-service
             port:
               number: 80
-      
+
       - path: /model
         pathType: Prefix
         backend:
@@ -101,7 +101,7 @@ spec:
             name: dinov3-api-service
             port:
               number: 80
-      
+
       - path: /load
         pathType: Exact
         backend:
@@ -109,7 +109,7 @@ spec:
             name: dinov3-api-service
             port:
               number: 80
-      
+
       # Default catch-all
       - path: /
         pathType: Prefix

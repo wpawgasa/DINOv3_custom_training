@@ -35,35 +35,35 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-      
+
       # Service account
       serviceAccountName: dinov3-api
-      
+
       # Node selector for GPU nodes
       nodeSelector:
         accelerator: nvidia-tesla-k80  # Adjust based on your GPU nodes
-      
+
       # Tolerations for GPU nodes
       tolerations:
       - key: nvidia.com/gpu
         operator: Exists
         effect: NoSchedule
-      
+
       containers:
       - name: dinov3-api
         image: dinov3-api:latest
         imagePullPolicy: Always
-        
+
         ports:
         - containerPort: 8000
           name: http
           protocol: TCP
-        
+
         # Environment variables from ConfigMap
         envFrom:
         - configMapRef:
             name: dinov3-config
-        
+
         # Environment variables from Secrets
         env:
         - name: API_KEY
@@ -71,7 +71,7 @@ spec:
             secretKeyRef:
               name: dinov3-secrets
               key: API_KEY
-        
+
         # Resource requests and limits
         resources:
           requests:
@@ -82,7 +82,7 @@ spec:
             cpu: "4"
             memory: "16Gi"
             nvidia.com/gpu: 1
-        
+
         # Volume mounts
         volumeMounts:
         - name: model-storage
@@ -95,7 +95,7 @@ spec:
           mountPath: /home/dinov3/temp
         - name: logs-storage
           mountPath: /home/dinov3/logs
-        
+
         # Health checks
         livenessProbe:
           httpGet:
@@ -106,7 +106,7 @@ spec:
           timeoutSeconds: 10
           failureThreshold: 3
           successThreshold: 1
-        
+
         readinessProbe:
           httpGet:
             path: /health
@@ -116,7 +116,7 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
           successThreshold: 1
-        
+
         # Startup probe for slow model loading
         startupProbe:
           httpGet:
@@ -127,7 +127,7 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 30  # Allow up to 5 minutes for startup
           successThreshold: 1
-        
+
         # Security context
         securityContext:
           allowPrivilegeEscalation: false
@@ -138,7 +138,7 @@ spec:
           capabilities:
             drop:
             - ALL
-      
+
       # Init container to warm up model
       initContainers:
       - name: model-warmup
@@ -155,7 +155,7 @@ spec:
           limits:
             cpu: "2"
             memory: "8Gi"
-      
+
       # Volumes
       volumes:
       - name: model-storage
@@ -170,12 +170,12 @@ spec:
       - name: logs-storage
         emptyDir:
           sizeLimit: "5Gi"
-      
+
       # Restart policy
       restartPolicy: Always
-      
+
       # DNS policy
       dnsPolicy: ClusterFirst
-      
+
       # Termination grace period
       terminationGracePeriodSeconds: 60
