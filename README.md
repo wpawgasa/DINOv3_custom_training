@@ -13,14 +13,18 @@ A comprehensive, production-ready framework for fine-tuning Meta's DINOv3 vision
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/dinov3-custom-training.git
-cd dinov3-custom-training
+git clone https://github.com/wpawgasa/DINOv3_custom_training.git
+cd DINOv3_custom_training
 
 # Install dependencies using uv (recommended)
 uv pip install -r requirements.txt
 
 # Or using pip
 pip install -r requirements.txt
+
+# Or running setup script
+chmod +x setup_dev.sh
+./setup_dev.sh
 ```
 
 ### Basic Usage
@@ -353,9 +357,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/your-org/dinov3-custom-training/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/dinov3-custom-training/discussions)
-- **Email**: support@your-org.com
+- **Issues**: [GitHub Issues](https://github.com/wpawgasa/DINOv3_custom_training/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/wpawgasa/DINOv3_custom_training/discussions)
+- **Email**: wpawgasa@gmail.com
 
 ## 🔄 Updates
 
